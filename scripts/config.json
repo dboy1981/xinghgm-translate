@@ -1,0 +1,13 @@
+{
+  "key_name": ["要翻译的内容", "字符串HashID"],
+  "key_column_names": ["要翻译的内容"],
+  "val_name": "englishtw",
+  "update_column_names": ["englishtw"],
+  "debug": false,
+  "dist_file": "",
+  "file_mapping": [
+    { "src": "translate_config_merge_merge_merge_merge.xlsx", "dist": "translate_config_merge_merge.xlsx" },
+    { "src": "translate_flow_string_merge_merge_merge_merge.xlsx", "dist": "translate_flow_string_merge_merge.xlsx" },
+    { "src": "translate_manual_merge_merge_merge_merge.xlsx", "dist": "translate_manual_merge_merge.xlsx" }
+  ]
+}

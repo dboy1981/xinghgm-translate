@@ -1,0 +1,13 @@
+{
+  "key_name": ["要翻译的内容", "字符串HashID"],
+  "key_column_names": ["要翻译的内容"],
+  "val_name": "indonesian",
+  "update_column_names": ["indonesian"],
+  "debug": false,
+  "dist_file": "",
+  "file_mapping": [
+    { "src": "translate_config_merge.xlsx", "dist": "en/translate_config_merge.xlsx" },
+    { "src": "translate_flow_string_merge.xlsx", "dist": "en/translate_flow_string_merge.xlsx" },
+    { "src": "translate_manual_merge.xlsx", "dist": "en/translate_manual_merge.xlsx" }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "xinghgm-translate",
+  "version": "1.0.0",
+  "description": "星痕翻译文件处理 - 以 dist 为标准替换 src 中指定列，输出到 result",
+  "main": "scripts/translate.js",
+  "bin": {
+    "xinghgm-translate": "./scripts/translate.js"
+  },
+  "scripts": {
+    "translate": "node scripts/translate.js",
+    "start": "node scripts/translate.js"
+  },
+  "keywords": [
+    "xlsx",
+    "translate",
+    "excel",
+    "星痕"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "fs-extra": "^8.1.0",
+    "xlsx": "^0.16.9"
+  }
+}
