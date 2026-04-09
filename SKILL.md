@@ -1,103 +1,117 @@
 ---
 name: xinghgm-translate
-description: 星痕翻译文件处理。以 dist 目录中的 xlsx 文件作为标准翻译数据，根据 key_name 主键匹配，将 src 目录中相同 key 的 update_column_names 列单元格值替换为标准值，输出到 result 目录，不修改 src 源文件。适用于 Excel 翻译文件批量更新场景。
+description: >-
+  以 dist 目录 xlsx 为标准数据源，按 key 匹配将 src 中指定列写回标准值，输出到 result，不改动 src。
+  在用户提到星痕翻译、dist/src/result、Excel 翻译批量更新、file_mapping，或需用基准表刷新待译表时使用。
 ---
 
 # 星痕翻译文件处理
 
-## 描述
+## 概述
 
-以 dist 目录中的文件作为标准翻译数据源，根据配置的 `key_name` 作为主键，匹配并替换 src 目录中相同 key 的 `update_column_names` 指定列单元格值，处理后的新文件输出到 result 目录，**不修改 src 中的源文件**。
+用 **dist** 作为标准翻译数据，按配置的 **key** 对齐 **src** 中同名行，将 **update_column_names** 列单元格替换为 dist 中 **val_name** 列的值；结果写入 **result**，**不修改 src**。
 
-## 使用方法
+## 何时启用
 
-在以下场景中启用此技能：
-- 用户需要批量更新 Excel 翻译文件
-- 用户提到「星痕翻译」「dist 标准文件」「src 替换」「翻译文件处理」
-- 用户有 dist/src/result 目录结构的翻译项目
-- 用户明确提到「星痕翻译」，但是上传的目录结构中缺少result，可以自行创建
-- 用户明确提到目录A替换目录B，那么直接把目录A复制到dist目录，目录B复制到src目录，目录不存在就创建
-- 如果用户没有提供config.json文件，根据目录中的文件结构自行创建config.json文件
-- 如果用户说「翻译indonesian这一列」，代表config.json文件中update_column_names:['indonesian']
-- 如果用户说「A目录englishtw列替换B目录的indonesian这一列」，代表config.json文件中update_column_names:['indonesian']，val_name:'englishtw'
-- 重点注意：val_name和update_column_names值不能是english，如果用户提出翻译（替换）english列，提醒用户修改，或者你帮用户修改excel表中的列名，把english改成'英文翻译'
-- 用户提到「星痕翻译」等待或者提醒用户上传zip包，可能是两个zip包，也可能是单个zip包（里面包含「dist 标准文件」「src 替换」），如果zip包中没有dist和src目录，说明用户dist和src分成两个包上传，根据用户提示确认dist和src包
-- 如果用户说的不清楚，引导用户说出具体的dist，src，映射关系，以及需要翻译的列名update_column_names和val_name
+- 用户要批量更新 Excel 翻译表，或提到「星痕翻译」「dist 标准 / src 待替换」。
+- 项目或上传内容呈现 **dist / src / result**（或需你创建 **result**）。
+- 用户描述「A 目录替换 B 目录」：将 **A → dist**、**B → src**（目录不存在则创建）。
+- 用户上传 zip：可能一个包内含 dist+src，或两个包分别对应 dist / src；包内无 dist、src 时需与用户确认哪个是基准、哪个是待更新。
+- 意图不清时：引导用户明确 **dist、src、文件对应关系**，以及 **update_column_names**、**val_name**。
 
-## 安装说明
+## 执行流程
 
-执行前需安装依赖：
+1. **工作目录**：在 `tmp/xinghgm-translate/projects` 下准备项目根，内含 `dist`、`src`、`result`（不存在则创建）。后续命令中的「项目根路径」即此目录（除非用户指定其他根路径且结构相同）。
+2. **解压与归类**：将用户提供的 zip 解压到合适位置；若用户用「目录 A / 目录 B」表述，按上文映射到 dist / src。
+3. **配置**：若缺少 `config.json`，根据目录内 xlsx 与用户口述列名，对照 `config.example.json` 生成；配置路径可为 **`.json` 或 `.js`**（脚本均支持）。
+4. **依赖**：在**本仓库根**执行 `npm install`（若尚未安装）。
+5. **运行**：从**本仓库根**执行  
+   `node scripts/translate.js <项目根路径> [config路径]`  
+   或使用 `npm run translate -- <项目根路径> [config路径]`。
+6. **交付**：向用户说明结果在 `<项目根路径>/result`，**src 未被改写**。
 
-```bash
-npm install
-```
+## 自然语言 → 配置
 
-## 指令
+| 用户说法 | 配置含义 |
+|----------|----------|
+| 「翻译 indonesian 这一列」 | `update_column_names`: `["indonesian"]`；未另说明时 `val_name` 与脚本默认或用户确认的 dist 标准列一致 |
+| 「A 目录 englishtw 列替换 B 目录的 indonesian 列」 | `update_column_names`: `["indonesian"]`，`val_name`: `"englishtw"` |
+| 未提供 config | 结合目录结构与上表规则编写 `config.json` |
 
-执行星痕翻译文件处理时：
+## 约束与禁区
 
-1. **创建工作目录**：每次处理翻译，必须在 `tmp/xinghgm-translate/projects` 下创建 `dist`、`src`、`result` 目录结构；目录不存在则创建，项目根路径即 `tmp/xinghgm-translate/projects`
-2. **确认目录结构**：项目需包含 `dist`（标准文件）、`src`（待更新文件）、`result`（输出目录）
-3. **运行脚本**：`node scripts/translate.js <项目根路径> [config.json]`，项目根路径为 `tmp/xinghgm-translate/projects`
-4. **配置说明**：可通过 `config.json` 或脚本内默认配置指定 、`update_column_names`、`val_name` 等， `key_name` 不能修改只能用默认值
+- **列名 `english`**：`val_name` 与 `update_column_names` 中**不要**使用字面量 `english`。若用户坚持「英文列」，提醒将表头改为 **`英文翻译`**（或等效列名），并在 config 中使用该列名。
+- **主键列内容**：**严禁**修改或删除 **key_name** 所对应表格列中的单元格内容（只替换 **update_column_names** 指定列）。
+- **key_name**：默认与 `scripts/translate.js` 内 `defaultConfig.key_name` 一致；**用户未明确要求时不要改动**（与 `config.example.json` 保持一致即可）。
 
-### 配置项
+## 配置项
 
 | 配置项 | 说明 | 示例 |
 |--------|------|------|
-| key_name | 主键列名（可数组） | `['要翻译的内容','字符串HashID']` |
-| key_column_names | 作为 key 匹配的列名 | `['要翻译的内容']` |
-| val_name | 标准文件中取值列名 | `'indonesian'` |
-| update_column_names | 需要更新的列名 | `['indonesian']` |
-| create_key | 可选，自定义 key 生成函数 | 见 config.js |
-| **file_mapping** | **src 与 dist 一一对应**（文件名可不同） | 见下方 |
-| dist_file | 单文件模式时指定 dist 文件 | 留空则自动取最新 |
+| key_name | 主键列名（可为数组） | `["要翻译的内容","字符串HashID"]` |
+| key_column_names | 参与匹配的列名 | `["要翻译的内容"]` |
+| val_name | dist 中取值列名 | `"indonesian"` |
+| update_column_names | src 中要写入的列名 | `["indonesian"]` |
+| create_key | 可选，自定义 key 生成逻辑 | 见脚本内默认实现 |
+| file_mapping | 多文件时 src 与 dist **一一对应**（文件名可不同） | 见下文 |
+| dist_file | 单文件模式指定 dist 文件；留空则递归取 dist 下**最新修改**的 xlsx | `""` 或路径 |
 
-### file_mapping：多 dist 与 src 一一对应
+### file_mapping（多基准文件）
 
-当 dist 有多个基准文件，且与 src 一一对应但**文件名不同**时，使用 `file_mapping`：
+当 dist 内多个基准文件与 src 多文件一一对应、且**文件名不一致**时使用：
 
 ```json
 {
   "file_mapping": [
-    { "src": "src中的文件名.xlsx", "dist": "dist子路径/基准文件名.xlsx" },
-    { "src": "子目录/另一文件.xlsx", "dist": "en/对应基准.xlsx" }
+    { "src": "src 相对路径/文件.xlsx", "dist": "dist 相对路径/基准.xlsx" }
   ]
 }
 ```
 
-- `src`：相对于 `src/` 的路径
-- `dist`：相对于 `dist/` 的路径
+- `src`：相对于项目根下 `src/` 的路径。  
+- `dist`：相对于项目根下 `dist/` 的路径。  
 
-**文件名不同示例**：src 中 `我的配置表.xlsx` 对应 dist 中 `en/translate_config_merge.xlsx`：
+示例：src 中 `我的配置表.xlsx` 对应 dist 中 `en/translate_config_merge.xlsx`：
+
 ```json
 { "src": "我的配置表.xlsx", "dist": "en/translate_config_merge.xlsx" }
 ```
 
-### 运行示例
+## 运行示例
 
 ```bash
-# 使用默认配置（项目根路径下的 dist/src/result）
-node scripts/translate.js /path/to/XingHGM
+cd /path/to/xinghgm-translate   # 本仓库根目录
+npm install
 
-# 使用自定义配置
-node scripts/translate.js /path/to/XingHGM ./config.json
+# 默认配置（项目根下须有 dist、src；result 会自动创建）
+node scripts/translate.js /path/to/project-root
 
-# 或使用 npm run
-npm run translate -- /path/to/XingHGM
+# 自定义配置
+node scripts/translate.js /path/to/project-root ./config.json
+
+npm run translate -- /path/to/project-root
 ```
 
-## 目录结构
+## 仓库目录结构（本技能所在项目）
 
 ```
 xinghgm-translate/
 ├── package.json
 ├── SKILL.md
 ├── config.example.json
-├── lib/                    # 内置依赖，无需外部引用
+├── lib/
 │   ├── processors/
 │   ├── formatters/
 │   └── utils/
 └── scripts/
     └── translate.js
+```
+
+用户数据目录（处理时）典型布局：
+
+```
+<项目根路径>/
+├── dist/      # 标准翻译 xlsx
+├── src/       # 待更新 xlsx（只读）
+└── result/    # 输出（脚本会 mkdir）
 ```
