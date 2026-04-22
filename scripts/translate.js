@@ -14,6 +14,7 @@
 const path = require('path')
 const fs = require('fs')
 const Processor = require('../lib/processors/translate')
+const { normalizeKeyString } = require('../lib/utils/textNormalize')
 
 // 获取 dist 目录中最新的 xlsx 文件（递归查找）
 function findLatestDistFile(distDir) {
@@ -45,11 +46,12 @@ function loadConfig(projectRoot, configPath) {
     val_name: 'indonesian',
     update_column_names: ['indonesian'],
     debug: false,
+    normalize_output: true,
     create_key: function (key, sheet, z) {
       const adjCell = z.replace(z[0], 'B')
       const adjVal = sheet[adjCell]?.v
       if (!adjVal) return key
-      return key + '_' + adjVal.toString().replace(/[\s ]/gi, '')
+      return key + '_' + normalizeKeyString(adjVal)
     }
   }
 
@@ -125,6 +127,7 @@ function main() {
         update_column_names: config.update_column_names,
         debug: config.debug,
         create_key: config.create_key,
+        normalize_output: config.normalize_output,
         file_filter: (filepath) => norm(path.relative(srcDir, filepath)) === srcRel,
         ...config.extra
       })
@@ -152,6 +155,7 @@ function main() {
       update_column_names: config.update_column_names,
       debug: config.debug,
       create_key: config.create_key,
+      normalize_output: config.normalize_output,
       ...config.extra
     })
   }
